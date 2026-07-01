@@ -1,6 +1,7 @@
 name: lifeboat
 services:
   lifeboat:
+    image: ghcr.io/cakeholedc/lifeboat:latest
     build: .
     environment:
       SCHEDULE: "0 3 * * *"

@@ -17,7 +17,7 @@ services:
   # ... your existing services ...
 
   lifeboat:
-    build: .
+    image: ghcr.io/cakeholedc/lifeboat:latest
     environment:
       SCHEDULE: "0 3 * * *"
       TZ: UTC
@@ -28,6 +28,10 @@ services:
       - ./backups:/backups
     restart: unless-stopped
 ```
+
+Pin to a specific release instead of `latest` for production use (e.g. `ghcr.io/cakeholedc/lifeboat:v1.0.0`).
+
+To build from source, clone this repo and replace `image:` with `build: .`.
 
 ## Bring your own script
 
