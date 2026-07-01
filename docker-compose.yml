@@ -1,0 +1,14 @@
+name: lifeboat
+services:
+  lifeboat:
+    build: .
+    environment:
+      SCHEDULE: "0 3 * * *"
+      TZ: UTC
+      BACKUP_PREFIX: backup
+      RETAIN_COUNT: "10"
+      RUN_ON_START: "false"
+    volumes:
+      - ./scripts/backup.sh:/scripts/backup.sh:ro
+      - ./backups:/backups
+    restart: unless-stopped
