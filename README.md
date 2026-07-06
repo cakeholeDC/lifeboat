@@ -86,4 +86,4 @@ The container is **unhealthy** if the last attempted backup failed (script exite
 A failed backup leaves existing backups untouched and skips retention pruning.
 
 ## Agentic Disclosure
-While this project was developed and maintained by human authors, agentic development tools (such as Github Co-Pilot and OpenAI/Codex) have been utilized for continuous architectural and refactoring assistance. All core logic, security boundaries, and code modifications have been reviewed, tested, and verified by humans prior to deployment.
+This project was developed and maintained by human authors. Agentic development tools (such as Github Co-Pilot and OpenAI/Codex) have been utilized for continuous architectural and refactoring assistance. All core logic, security boundaries, and code modifications have been reviewed, tested, and verified by humans prior to deployment.
