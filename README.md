@@ -33,6 +33,19 @@ Pin to a specific release instead of `latest` for production use (e.g. `ghcr.io/
 
 To build from source, clone this repo and replace `image:` with `build: .`.
 
+## Releases
+
+Versions are managed by release-please. Merging a normal pull request into `main` creates or updates a versioning PR. Merging that PR creates a SemVer Git tag, and the publish workflow builds and publishes the multi-architecture Docker image to GHCR. No GitHub Release is created.
+
+Use Conventional Commit titles for pull requests and squash-merge them so the PR title becomes the commit subject:
+
+- `fix: ...` creates a patch release.
+- `feat: ...` creates a minor release.
+- `feat!: ...` or another type with `!` creates a major release.
+- `chore: ...`, `docs: ...`, and similar maintenance types do not create a release.
+
+The release workflow requires a repository secret named `MY_RELEASE_PLEASE_TOKEN`. It must be a token that can write repository contents, issues, and pull requests. A personal access token is used so the Docker version tag can trigger the image publishing workflow.
+
 ## Bring your own script
 
 Mount any script to `/scripts/backup.sh`. It must write an archive to `$BACKUP_FILE`:
