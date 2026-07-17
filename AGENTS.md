@@ -13,7 +13,7 @@ belongs in `README.md`; this file is for agent behavior and repo handling.
 
 ## Key Contracts
 
-- `$BACKUP_FILE` is the only contract between `runner.sh` and the user's script. It is set and exported by `runner.sh`; the script must write an archive there.
+- `$BACKUP_FILE` is the only contract between `runner.sh` and the user's script. It is set and exported by `runner.sh` as a timestamped filename stem; the script must deliver exactly one non-empty file whose name is the stem or begins with it.
 - `BACKUP_PREFIX` is validated in `runner.sh` before `BACKUP_FILE` is constructed. Allowed: letters, numbers, dot, underscore, dash. Rejected: empty, `.`, `..`, anything with `/`, spaces, or shell metacharacters.
 - Health flag is `/tmp/backup_failed`. Present = unhealthy. Removed on next successful run.
 - Lock file is `/tmp/lifeboat.lock` (flock). Prevents overlapping runs; second invocation exits 0 silently.
