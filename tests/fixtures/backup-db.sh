@@ -1,8 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-case "$BACKUP_FILE" in
-  *.tar.gz) exit 1 ;;
-esac
+if [ "${BACKUP_DIR:-}" != /backups ]; then
+  exit 1
+fi
 
-printf 'database backup\n' > "${BACKUP_FILE}.db"
+printf 'database backup\n' > "$BACKUP_DIR/backup_handler.db"
+printf '%s\n' backup_handler.db
