@@ -6,8 +6,8 @@ A minimal Docker sidecar for scheduled backups. Add it to an existing Compose st
 
 1. Add `lifeboat` as a service to your existing `docker-compose.yml`.
 2. Mount your backup script to `/scripts/backup.sh`.
-3. `runner.sh` sets `$BACKUP_FILE` to a timestamped filename stem under `/backups`.
-4. Your script writes one non-empty backup file using `$BACKUP_FILE` as its name or filename stem. Any extension is allowed.
+3. `runner.sh` invokes `/scripts/backup.sh`.
+4. Runner exports `BACKUP_DIR=/backups`. Your script chooses a filename, writes exactly one non-empty regular file in that directory, and prints only that file's basename to stdout.
 5. Lifeboat enforces your retention policy and marks the container unhealthy if a backup fails.
 
 ## Adding to an existing stack
@@ -48,16 +48,19 @@ The release workflow requires a repository secret named `MY_RELEASE_PLEASE_TOKEN
 
 ## Bring your own script
 
-Mount any script to `/scripts/backup.sh`. It must write an archive to `$BACKUP_FILE`:
+Mount any script to `/scripts/backup.sh`. It must choose its output filename, write one file under `/backups`, and print the basename:
 
 ```bash
 #!/bin/bash
 set -euo pipefail
 
-tar czf "${BACKUP_FILE}.tar.gz" /path/to/your/data
+backup_dir="${BACKUP_DIR:-/backups}"
+backup_file="${backup_dir}/${BACKUP_PREFIX}_$(date +%Y%m%dT%H%M%S).tar.gz"
+tar czf "$backup_file" /path/to/your/data
+printf '%s\n' "$(basename "$backup_file")"
 ```
 
-The script runs as `bash /scripts/backup.sh` - no execute bit required. If it exits non-zero, or if it does not deliver exactly one non-empty file beginning with `$BACKUP_FILE`, the container goes unhealthy.
+The script runs as `bash /scripts/backup.sh` - no execute bit required. Runner provides `BACKUP_DIR=/backups`; the fallback makes the script usable outside Lifeboat. Its stdout must contain exactly one basename with no directory separators or extra output. If it exits non-zero, creates anything other than exactly one new non-empty regular file, or returns the wrong filename, the container goes unhealthy.
 
 ## Configuration
 
@@ -65,13 +68,15 @@ The script runs as `bash /scripts/backup.sh` - no execute bit required. If it ex
 |---|---|---|
 | `SCHEDULE` | `0 3 * * *` | Cron expression for when backups run |
 | `TZ` | `UTC` | Timezone for the cron schedule |
-| `BACKUP_PREFIX` | `backup` | Filename prefix - e.g. `myapp` → `myapp_20260616T030000.tar.gz` |
+| `BACKUP_PREFIX` | `backup` | Safe value exposed to the handler, which may use it in its chosen filename |
 | `RETAIN_COUNT` | unset | Keep the N most recent backups |
 | `RETAIN_SIZE_MB` | unset | Delete oldest until total size is under N MB |
 | `RETAIN_DAYS` | unset | Delete backups older than N days |
 | `RUN_ON_START` | `false` | Run a backup immediately on container start, before the first cron tick |
 
 All retention rules are enforced independently — set any combination.
+
+Retention considers every regular file directly under `/backups`, so keep that directory dedicated to backup output.
 
 `BACKUP_PREFIX` must contain only letters, numbers, dots, underscores, and dashes. It cannot be `.` or `..`.
 
@@ -92,7 +97,7 @@ docker compose ps      # healthy / unhealthy at a glance
 docker compose logs -f # backup run output
 ```
 
-The container is **unhealthy** if the last attempted backup failed (script exited non-zero, or the script did not deliver exactly one non-empty file beginning with `$BACKUP_FILE`). It recovers automatically on the next successful run.
+The container is **unhealthy** if the last attempted backup failed (script exited non-zero, or the script did not deliver exactly one new non-empty regular file and return its basename). It recovers automatically on the next successful run.
 
 **Health does not guarantee backup freshness.** A healthy container means the last run succeeded — not that a run has happened recently. Use `SCHEDULE` and `RUN_ON_START` to control timing.
 
