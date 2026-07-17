@@ -28,6 +28,7 @@ jobs:
             fix
             chore
           scopes: | # allowed scopes
+            main
             docs
             test
             build
