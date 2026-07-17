@@ -27,23 +27,29 @@ case "$BACKUP_PREFIX" in
     exit 1
     ;;
 esac
-BACKUP_FILE="/backups/${BACKUP_PREFIX}_$(date +%Y%m%dT%H%M%S).tar.gz"
+BACKUP_FILE="/backups/${BACKUP_PREFIX}_$(date +%Y%m%dT%H%M%S)"
 export BACKUP_FILE
 
 echo "[lifeboat] $(date -Iseconds) starting → $BACKUP_FILE"
 
 if bash /scripts/backup.sh; then
-  if [ ! -s "$BACKUP_FILE" ]; then
-    rm -f "$BACKUP_FILE"
+  backup_files=()
+  for candidate in "${BACKUP_FILE}"*; do
+    [ -f "$candidate" ] && backup_files+=("$candidate")
+  done
+
+  if [ "${#backup_files[@]}" -ne 1 ] || [ ! -s "${backup_files[0]}" ]; then
+    rm -f -- "${BACKUP_FILE}"*
     touch /tmp/backup_failed
-    echo "[lifeboat] ERROR: backup script exited 0 but $BACKUP_FILE is missing or empty — container is now unhealthy" >&2
+    echo "[lifeboat] ERROR: backup script exited 0 but no single non-empty file was delivered for $BACKUP_FILE - container is now unhealthy" >&2
     exit 1
   fi
+  BACKUP_OUTPUT="${backup_files[0]}"
   [ -f /tmp/backup_failed ] && echo "[lifeboat] recovered — container is now healthy"
   rm -f /tmp/backup_failed
-  echo "[lifeboat] success: $BACKUP_FILE ($(du -sh "$BACKUP_FILE" | cut -f1))"
+  echo "[lifeboat] success: $BACKUP_OUTPUT ($(du -sh "$BACKUP_OUTPUT" | cut -f1))"
 else
-  rm -f "$BACKUP_FILE"
+  rm -f -- "${BACKUP_FILE}"*
   touch /tmp/backup_failed
   echo "[lifeboat] ERROR: backup script exited non-zero — container is now unhealthy" >&2
   exit 1
@@ -51,7 +57,7 @@ fi
 
 # Each retention rule is evaluated independently (OR semantics: any triggered limit prunes)
 # Retention only considers files matching the backup filename pattern — stray files are ignored.
-BACKUP_PATTERN="${BACKUP_PREFIX}_*.tar.gz"
+BACKUP_PATTERN="${BACKUP_PREFIX}_*"
 
 if [ -n "${RETAIN_COUNT:-}" ]; then
   # note: ls -t is safe here since we control the filenames (no spaces, no newlines)

@@ -13,5 +13,5 @@ timestamp: $(date -Iseconds)
 backup_file: $BACKUP_FILE
 EOF
 
-tar czf "$BACKUP_FILE" -C "$tmpdir" manifest.txt
-echo "[backup.sh] wrote mock archive → $BACKUP_FILE"
+tar czf "${BACKUP_FILE}.tar.gz" -C "$tmpdir" manifest.txt
+echo "[backup.sh] wrote mock archive → ${BACKUP_FILE}.tar.gz"
